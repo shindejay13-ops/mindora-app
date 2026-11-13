@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mindora Firebase Test</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f4ff;color:#30224b;font-family:Arial,sans-serif;padding:22px}.wrap{max-width:520px;margin:24px auto;background:#fff;border:1px solid #e9e1f5;border-radius:22px;padding:24px;box-shadow:0 10px 30px #34205a12}h1{margin:0 0 8px;color:#6839b5}p{color:#6c6478;line-height:1.5}.field{margin:16px 0}label{display:block;font-weight:600;margin-bottom:7px}input{width:100%;padding:14px;border:1px solid #d9d0e8;border-radius:12px;font-size:16px}button{width:100%;padding:14px;border:0;border-radius:12px;background:#7044c5;color:white;font-size:16px;font-weight:700;margin-top:10px}button.secondary{background:#eee8f8;color:#4e3478}.status{margin-top:18px;padding:14px;border-radius:12px;background:#f3effa;white-space:pre-wrap;overflow-wrap:anywhere}.small{font-size:12px;color:#7c7487;margin-top:16px}
+</style>
+</head>
+<body><main class="wrap">
+<h1>Mindora Firebase Test</h1><p>ही स्वतंत्र Test Page आहे. मुख्य Mindora Website मध्ये कोणताही बदल होत नाही.</p>
+<div class="field"><label for="email">Test Email</label><input id="email" type="email" autocomplete="username" placeholder="test@example.com"></div>
+<div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Firebase test account password"></div>
+<button id="login">Sign in and test Firebase</button>
+<button id="logout" class="secondary" hidden>Sign out</button>
+<div id="status" class="status">Ready. Test account ने Sign in करा.</div>
+<p class="small">टीप: Password या पेजमध्ये सेव्ह केला जात नाही. Test पूर्ण झाल्यावर Sign out करा.</p>
+</main>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+const firebaseConfig={
+ apiKey:'AIzaSyAjCAra08cg73c6SCkhWZyQxhQhGTlcK_g',
+ authDomain:'mindora-573a3.firebaseapp.com',
+ projectId:'mindora-573a3',
+ storageBucket:'mindora-573a3.firebasestorage.app',
+ messagingSenderId:'16055409743',
+ appId:'1:16055409743:web:1d26403b5fde076f5fde3a',
+ measurementId:'G-B4W0T38ZHD'
+};
+const statusEl=document.getElementById('status');
+const loginBtn=document.getElementById('login');
+const logoutBtn=document.getElementById('logout');
+const app=initializeApp(firebaseConfig); const auth=getAuth(app); const db=getFirestore(app);
+loginBtn.addEventListener('click',async()=>{
+ const email=document.getElementById('email').value.trim(); const password=document.getElementById('password').value;
+ if(!email||!password){statusEl.textContent='Email आणि Password भरा.';return;}
+ loginBtn.disabled=true;loginBtn.textContent='Please wait…';statusEl.textContent='Firebase Authentication तपासत आहे…';
+ try{
+  const cred=await signInWithEmailAndPassword(auth,email,password); const u=cred.user;
+  statusEl.textContent='Authentication SUCCESS\nUID: '+u.uid+'\nFirestore तपासत आहे…';
+  const profileRef=doc(db,'users',u.uid); const profileSnap=await getDoc(profileRef);
+  if(!profileSnap.exists()){
+   await setDoc(profileRef,{email:u.email,role:'student',createdAt:serverTimestamp()});
+   statusEl.textContent+='\nStudent profile CREATE SUCCESS';
+  }else{statusEl.textContent+='\nStudent profile READ SUCCESS';}
+  statusEl.textContent+='\n\nFirebase connection test PASSED.';logoutBtn.hidden=false;
+ }catch(e){statusEl.textContent='TEST FAILED\nCode: '+(e.code||'unknown')+'\nMessage: '+(e.message||String(e))+'\n\nScreenshot पाठवा. Password शेअर करू नका.';}
+ finally{loginBtn.disabled=false;loginBtn.textContent='Sign in and test Firebase';}
+});
+logoutBtn.addEventListener('click',async()=>{await signOut(auth);logoutBtn.hidden=true;statusEl.textContent='Signed out.';});
+</script></body></html>
